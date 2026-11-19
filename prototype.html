@@ -262,6 +262,25 @@
       background: rgba(255,255,255,0.12);
     }
     .card-name { font-weight: 800; font-size: 0.95rem; }
+    .card-art {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.22);
+      border-radius: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #f8fafc;
+    }
+    .card-art svg {
+      width: 78px;
+      height: 52px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
     .card-power { font-size: 0.78rem; line-height: 1.3; color: #e2e8f0; }
     .card-badge {
       margin-top: auto;
@@ -440,6 +459,45 @@
       { id: 'Chameleon', color: 'G', base: 4, step: 'Step 2/3', tags: ['synergy','color','chaos'], power: 'Counts as all 4 colors (Red, Blue, Yellow, Green).' },
       { id: 'Middleman', color: 'G', base: 7, step: 'Step 3', tags: ['tempo','mid'], power: 'Only wins if neither led nor played last.' },
     ];
+
+    const CARD_ART = {
+      'Sprinter': `<circle cx="46" cy="12" r="5"/><path d="M42 18l-8 10-10 2M42 18l10 6 8-4M34 28l-10 14M34 28l12 8 4 10"/><path d="M8 16h14M6 24h12M10 32h10"/>`,
+      'Bouncer': `<circle cx="40" cy="12" r="6"/><path d="M24 22c0-3 6-4 16-4s16 1 16 4v14H24z"/><path d="M26 28l14 4 14-4"/><circle cx="64" cy="16" r="6"/><path d="M60 12l8 8"/>`,
+      'Saboteur': `<path d="M26 24c0-10 8-14 14-14s14 4 14 14"/><circle cx="40" cy="18" r="4"/><path d="M22 44l6-16h24l6 16"/><path d="M52 24l12-8M52 20l12 8"/><path d="M10 16h12"/>`,
+      'Giant-Slayer': `<circle cx="24" cy="30" r="4"/><path d="M24 34v12M18 38h12M30 36l16-14"/><path d="M50 8h16v30c0 6-6 8-12 8h-8v-6h8"/>`,
+      'Blitz': `<path d="M44 6l-12 20h10l-6 20 18-24H42z"/><path d="M10 18h14M14 28h10M10 38h16"/>`,
+      'Rival': `<circle cx="24" cy="18" r="6"/><path d="M16 44c0-10 16-10 16 0"/><circle cx="56" cy="18" r="6"/><path d="M48 44c0-10 16-10 16 0"/><path d="M36 22l8 4-8 4"/>`,
+      'Hothead': `<circle cx="40" cy="28" r="9"/><path d="M35 26l3 2M45 26l-3 2M36 33h8"/><path d="M31 19c-2-6 4-12 9-14 2 4 6 4 9 0 4 4 4 10 0 14"/>`,
+      'Showboat': `<path d="M30 14h20l-2-8H32zM26 14h28"/><circle cx="40" cy="22" r="5"/><path d="M26 44l6-14h16l6 14"/><path d="M14 20l4-4M66 20l-4-4M14 34l4 2M66 34l-4 2"/>`,
+      'Martyr': `<ellipse cx="40" cy="8" rx="9" ry="3"/><circle cx="40" cy="18" r="5"/><path d="M30 26h20l-2 16-8 5-8-5z"/><path d="M36 32l8 8"/>`,
+      'Mirror': `<ellipse cx="40" cy="24" rx="14" ry="18"/><path d="M40 42v8M34 50h12"/><circle cx="40" cy="20" r="4"/><path d="M32 32c2-4 14-4 16 0"/>`,
+      'Nullifier': `<circle cx="34" cy="14" r="5"/><path d="M26 44l8-22 8 22"/><path d="M46 18l16 16M62 18l-16 16"/>`,
+      'Frostbite': `<circle cx="40" cy="18" r="6"/><path d="M32 10l4 4 4-6 4 6 4-4"/><path d="M28 44c0-10 24-10 24 0"/><path d="M60 16v12M54 22h12M56 18l8 8M64 18l-8 8"/>`,
+      'Tactician': `<circle cx="40" cy="14" r="6"/><path d="M34 14h12"/><path d="M24 34h32l6 12H18z"/><path d="M32 34l-2 12M48 34l2 12M22 40h36"/>`,
+      'Tide-Turner': `<path d="M10 42c10-16 24-22 36-14 6 4 6 12-2 12-6 0-6-6-2-8"/><circle cx="38" cy="14" r="4"/><path d="M32 22l10 4-6 8"/>`,
+      'Lone Wolf': `<path d="M22 44l10-16 6-14 6 6 4-4 2 8 8 6-6 4-4 10"/><circle cx="18" cy="14" r="6"/>`,
+      'Anchor': `<circle cx="40" cy="12" r="4"/><path d="M40 16v28M30 22h20"/><path d="M22 34c4 10 32 10 36 0"/>`,
+      'Pacifist': `<circle cx="40" cy="26" r="16"/><path d="M40 10v32M40 26l-11 11M40 26l11 11"/>`,
+      'Flipper': `<circle cx="40" cy="36" r="5"/><path d="M40 31V18l-8-10M40 18l8-10M30 26h20"/><path d="M16 16v20l-4-4M64 36V16l4 4"/>`,
+      'Kingmaker': `<circle cx="24" cy="20" r="5"/><path d="M16 44c0-10 16-10 16 0M30 26l12-8"/><path d="M46 14l4-6 4 4 4-4 4 6z"/><circle cx="54" cy="26" r="5"/><path d="M46 44c0-8 16-8 16 0"/>`,
+      'Infinity': `<path d="M24 28c0-8 10-8 16 0 6 8 16 8 16 0s-10-8-16 0c-6 8-16 8-16 0z"/><path d="M40 10v6M40 40v6M14 28h4M62 28h4"/>`,
+      'High-Roller': `<rect x="18" y="14" width="18" height="18" rx="3"/><circle cx="23" cy="19" r="1.2"/><circle cx="31" cy="27" r="1.2"/><rect x="44" y="20" width="18" height="18" rx="3"/><circle cx="49" cy="25" r="1.2"/><circle cx="53" cy="29" r="1.2"/><circle cx="57" cy="33" r="1.2"/>`,
+      'Gambler': `<circle cx="40" cy="14" r="5"/><path d="M28 16h24"/><path d="M24 44l6-20h20l6 20"/><rect x="52" y="12" width="12" height="16" rx="2"/>`,
+      'Underdog': `<ellipse cx="40" cy="30" rx="14" ry="9"/><circle cx="24" cy="24" r="6"/><path d="M20 18l-4-6 6 2M54 28l8-6M30 39v7M48 39v7"/>`,
+      'Tiebreaker': `<circle cx="32" cy="14" r="5"/><path d="M24 44l4-20h8l4 20"/><path d="M44 20h14a4 4 0 0 1 0 8h-8l-6-4z"/>`,
+      'Spoiler': `<path d="M24 18c4-8 12-8 16 0 4-8 12-8 16 0"/><circle cx="40" cy="26" r="7"/><path d="M37 25h1M43 25h1M38 30c2 4 4 4 6 0"/>`,
+      'Midas': `<path d="M28 16l4-8 8 5 8-5 4 8z"/><circle cx="40" cy="24" r="5"/><path d="M28 44l4-12h16l4 12"/><circle cx="62" cy="24" r="5"/><path d="M62 12v4M62 32v4M54 24h2M68 24h2"/>`,
+      'Pickpocket': `<path d="M22 18h24l-4-8H26z"/><circle cx="34" cy="24" r="5"/><path d="M22 44l6-14h12l6 14"/><path d="M52 24c6 0 10 4 10 12H48c0-8 4-12 4-12z"/>`,
+      'Copycat': `<circle cx="26" cy="22" r="7"/><path d="M20 16l-2-7 6 4M32 16l2-7-6 4"/><circle cx="54" cy="22" r="7"/><path d="M48 16l-2-7 6 4M60 16l2-7-6 4"/><path d="M20 38h12M48 38h12"/>`,
+      'Scapegoat': `<ellipse cx="42" cy="30" rx="12" ry="8"/><circle cx="26" cy="22" r="5"/><path d="M24 17c-4-6-10-4-8 2M28 17c4-6 10-4 8 2"/><path d="M34 38v8M48 38v8"/>`,
+      'Leech': `<path d="M18 36c6-16 18-20 30-10 8 6 12 2 14-4"/><circle cx="62" cy="22" r="4"/><path d="M16 36l-4 4M20 38l-2 4"/>`,
+      'Crowd-Surfer': `<circle cx="40" cy="12" r="4"/><path d="M26 22h28l-6 6H32z"/><path d="M16 44l4-10M28 44l2-10M40 44v-10M52 44l-2-10M64 44l-4-10"/>`,
+      'Tax Collector': `<path d="M30 14h20v-6H30zM26 14h28"/><circle cx="40" cy="24" r="6"/><circle cx="43" cy="23" r="2.5"/><path d="M26 44l6-12h16l6 12"/>`,
+      'Late Bloomer': `<path d="M32 36h16l-2 10H34z"/><path d="M40 36V20"/><circle cx="40" cy="14" r="4"/><circle cx="33" cy="14" r="3"/><circle cx="47" cy="14" r="3"/><circle cx="40" cy="7" r="3"/><circle cx="40" cy="21" r="3"/>`,
+      'Vampire': `<circle cx="40" cy="20" r="6"/><path d="M37 24l1 3M43 24l-1 3"/><path d="M20 22l12 6v16h16V28l12-6-6 22H26z"/>`,
+      'Chameleon': `<path d="M16 34h48"/><path d="M28 30c0-10 12-14 20-10 6 4 6 12 0 12-4 0-4-4-1-4"/><circle cx="48" cy="23" r="1.5"/><path d="M22 14h4M32 10h4M42 10h4M52 14h4"/>`,
+      'Middleman': `<circle cx="20" cy="20" r="6"/><path d="M12 44c0-10 16-10 16 0"/><circle cx="60" cy="20" r="6"/><path d="M52 44c0-10 16-10 16 0"/><circle cx="40" cy="24" r="4.5"/><path d="M34 44c0-8 12-8 12 0"/>`,
+    };
 
     function shuffle(arr) {
       const a = [...arr];
@@ -952,6 +1010,7 @@
             <span class="card-step">${card.step}</span>
           </div>
           <div class="card-name">${card.id}</div>
+          <div class="card-art"><svg viewBox="0 0 80 52">${CARD_ART[card.id] || ''}</svg></div>
           <div class="card-power">${card.power}</div>
           ${badge}
         </div>
