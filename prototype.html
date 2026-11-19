@@ -903,8 +903,13 @@
         G.hands[p].push(picked);
         addLog(`${PLAYERS[p].name} drafted <b>${picked.id}</b>.`);
         G.draftCursor++;
-        render();
-        advanceDraft();
+        if (G.draftCursor >= 4) {
+          G.round++;
+          startRound();
+        } else {
+          render();
+          advanceDraft();
+        }
       }, 350);
     }
 
@@ -914,8 +919,13 @@
       G.hands[0].push(picked);
       addLog(`You drafted <b>${picked.id}</b>.`);
       G.draftCursor++;
-      render();
-      advanceDraft();
+      if (G.draftCursor >= 4) {
+        G.round++;
+        startRound();
+      } else {
+        render();
+        advanceDraft();
+      }
     }
 
     function cardHTML(card, opts = {}) {
@@ -979,7 +989,7 @@
 
       // Draft Panel
       const draftEl = document.getElementById('draftContainer');
-      if (G.phase === 'draft') {
+      if (G.phase === 'draft' && G.draftCursor < G.draftOrder.length) {
         const curDrafter = G.draftOrder[G.draftCursor];
         const yourTurn = curDrafter === 0;
         draftEl.innerHTML = `
