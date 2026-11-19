@@ -689,6 +689,7 @@
 
     // --- GAME STATE ---
     let G = null;
+    let gameSeq = 0;
     const PLAYERS = [
       { id: 0, name: 'You', profile: 'Human' },
       { id: 1, name: 'Bot Ada', profile: 'Shark' },
@@ -711,6 +712,7 @@
       for (let p = 0; p < 4; p++) hands[p].push(charDeck.pop());
 
       G = {
+        gameId: ++gameSeq,
         charDeck,
         hands,
         roundHands: [],
@@ -763,8 +765,9 @@
         render();
         return; // Wait for human click
       }
+      const myGameId = G.gameId;
       setTimeout(() => {
-        if (G.phase !== 'play') return;
+        if (G.gameId !== myGameId || G.phase !== 'play') return;
         const hand = G.roundHands[p];
         const curP = G.roundPrizes[G.trick];
         const nextP = G.trick + 1 < G.roundPrizes.length ? G.roundPrizes[G.trick + 1] : 0;
@@ -892,8 +895,9 @@
         render();
         return;
       }
+      const myGameId = G.gameId;
       setTimeout(() => {
-        if (G.phase !== 'draft') return;
+        if (G.gameId !== myGameId || G.phase !== 'draft') return;
         let bestIdx = 0, bestS = -1e9;
         for (let i = 0; i < G.draftPool.length; i++) {
           const sc = scoreDraftCard(G.draftPool[i], G.hands[p], PLAYERS[p].profile);
