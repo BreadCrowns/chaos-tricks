@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chaos Tricks — Playable Prototype</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --felt: #132238;
+      --panel: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --red: #ef4444;
+      --red-bg: #451a1a;
+      --blue: #3b82f6;
+      --blue-bg: #172554;
+      --yellow: #eab308;
+      --yellow-bg: #422006;
+      --green: #22c55e;
+      --green-bg: #14532d;
+      --gold: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px;
+      background: #0b1120;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .brand { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.02em; }
+    .brand span { color: var(--gold); }
+    .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    button, select {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover:not(:disabled) { border-color: #64748b; background: #293548; }
+    button.primary {
+      background: var(--gold);
+      color: #0f172a;
+      border-color: var(--gold);
+    }
+    button.primary:hover:not(:disabled) { background: #fbbf24; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 310px;
+      gap: 12px;
+      padding: 12px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    @media (max-width: 960px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    .table-area {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Opponents Bar */
+    .opponents {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .player-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      position: relative;
+    }
+    .player-box.active-turn {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 1px var(--gold);
+    }
+    .player-box.leader-box::after {
+      content: "LEAD";
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      background: var(--gold);
+      color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .p-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .p-name { font-weight: 700; font-size: 0.95rem; }
+    .p-tag { font-size: 0.72rem; color: var(--muted); }
+    .p-stats { font-size: 0.8rem; color: var(--muted); display: flex; gap: 10px; margin-bottom: 6px; }
+    .p-stats b { color: var(--text); }
+    .known-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chip {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .chip.played { opacity: 0.35; text-decoration: line-through; }
+
+    /* Prize Row */
+    .prize-bar {
+      background: var(--felt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .prize-list { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .prize-card {
+      width: 44px;
+      height: 58px;
+      border-radius: 8px;
+      background: #1e293b;
+      border: 2px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+    }
+    .prize-card.current {
+      border-color: var(--gold);
+      background: #422006;
+      color: #fde047;
+      transform: scale(1.08);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+    }
+    .prize-card.done { opacity: 0.35; }
+    .prize-card small { font-size: 0.6rem; font-weight: 600; color: var(--muted); }
+
+    /* Center Trick Felt */
+    .trick-felt {
+      background: radial-gradient(circle at center, #1a304d 0%, var(--felt) 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      min-height: 250px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .trick-slots {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+    @media (max-width: 700px) {
+      .trick-slots { grid-template-columns: repeat(2, 1fr); }
+      .opponents { grid-template-columns: 1fr; }
+    }
+    .slot {
+      border: 1px dashed #475569;
+      border-radius: 10px;
+      padding: 8px;
+      min-height: 175px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.35);
+    }
+    .slot-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .status-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Character Cards */
+    .card {
+      border-radius: 10px;
+      padding: 10px;
+      border: 2px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      user-select: none;
+    }
+    .card.clickable { cursor: pointer; }
+    .card.clickable:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.45); }
+    .card.R { background: var(--red-bg); border-color: var(--red); }
+    .card.B { background: var(--blue-bg); border-color: var(--blue); }
+    .card.Y { background: var(--yellow-bg); border-color: var(--yellow); }
+    .card.G { background: var(--green-bg); border-color: var(--green); }
+
+    .card.winner-card {
+      box-shadow: 0 0 0 2px var(--gold), 0 0 18px rgba(245, 158, 11, 0.45);
+    }
+    .card.removed-card { opacity: 0.4; filter: grayscale(0.7); }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-val {
+      font-size: 1.25rem;
+      font-weight: 900;
+      background: rgba(0,0,0,0.45);
+      padding: 2px 8px;
+      border-radius: 6px;
+      min-width: 32px;
+      text-align: center;
+    }
+    .card-step {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.12);
+    }
+    .card-name { font-weight: 800; font-size: 0.95rem; }
+    .card-power { font-size: 0.78rem; line-height: 1.3; color: #e2e8f0; }
+    .card-badge {
+      margin-top: auto;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      width: fit-content;
+    }
+    .badge-win { background: var(--gold); color: #0f172a; }
+    .badge-dead { background: #dc2626; color: white; }
+    .badge-eff { background: rgba(255,255,255,0.18); color: #fff; }
+
+    /* Your Hand */
+    .hand-area {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .hand-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .hand-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 10px;
+    }
+
+    /* Draft Overlay / Panel */
+    .draft-panel {
+      background: #172554;
+      border: 2px solid var(--gold);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    /* Sidebar Log */
+    aside {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 80px);
+    }
+    aside h3 { margin: 0 0 8px 0; font-size: 0.95rem; }
+    .log {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .log-entry {
+      padding: 6px 8px;
+      background: rgba(15, 23, 42, 0.55);
+      border-radius: 6px;
+      border-left: 3px solid var(--border);
+    }
+    .log-entry.win { border-left-color: var(--gold); }
+    .log-entry.round { border-left-color: var(--green); font-weight: 600; }
+    .log-entry.deadlock { border-left-color: var(--red); }
+
+    .R-chip { background: var(--red-bg); color: #fca5a5; }
+    .B-chip { background: var(--blue-bg); color: #93c5fd; }
+    .Y-chip { background: var(--yellow-bg); color: #fde047; }
+    .G-chip { background: var(--green-bg); color: #86efac; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">CHAOS <span>TRICKS</span> <small style="color:var(--muted);font-weight:500;">Prototype</small></div>
+    <div class="controls">
+      <label style="font-size:0.82rem;color:var(--muted);">
+        Draft:
+        <select id="draftMode">
+          <option value="winner_first">Winner-First (Standings)</option>
+          <option value="catchup">Winner 1st, Catch-Up</option>
+        </select>
+      </label>
+      <button id="btnNewGame" class="primary">New Game</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="table-area">
+      <div class="opponents" id="opponents"></div>
+
+      <div class="prize-bar">
+        <div>
+          <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;font-weight:700;" id="roundLabel">Round 1 / 5</div>
+          <div style="font-size:0.85rem;">Prize Row <span style="color:var(--muted);">(Win Round 5 to win the game!)</span></div>
+        </div>
+        <div class="prize-list" id="prizeList"></div>
+      </div>
+
+      <div id="draftContainer"></div>
+
+      <div class="trick-felt">
+        <div class="status-banner">
+          <div id="statusText" style="font-weight:600;font-size:0.92rem;">Starting game...</div>
+          <div style="display:flex;gap:8px;">
+            <button id="btnNext" class="primary" style="display:none;">Next Trick</button>
+          </div>
+        </div>
+        <div class="trick-slots" id="trickSlots"></div>
+      </div>
+
+      <div class="hand-area">
+        <div class="hand-head">
+          <div>
+            <strong>Your Hand</strong>
+            <span id="yourScore" style="margin-left:10px;font-size:0.85rem;color:var(--muted);"></span>
+          </div>
+          <div id="yourHint" style="font-size:0.8rem;color:var(--gold);"></div>
+        </div>
+        <div class="hand-grid" id="yourHand"></div>
+      </div>
+    </div>
+
+    <aside>
+      <h3>Trick &amp; Round Log</h3>
+      <div class="log" id="log"></div>
+    </aside>
+  </main>
+
+  <script>
+    const INF = 1e9;
+    const ROSTER = [
+      // RED
+      { id: 'Sprinter', color: 'R', base: 8, step: 'Step 3', tags: ['pos','lead'], power: 'Only wins if this card was led.' },
+      { id: 'Bouncer', color: 'R', base: 4, step: 'Step 1', tags: ['chaos','remove'], power: 'Remove the highest other card played from this trick.' },
+      { id: 'Saboteur', color: 'R', base: 3, step: 'Step 1', tags: ['chaos','cancel'], power: 'Cancel the powers of all cards played before this card.' },
+      { id: 'Giant-Slayer', color: 'R', base: 2, step: 'Step 2', tags: ['synergy','counter'], power: 'If any card with Base Value 8+ (or ∞) is in this trick, value becomes 11.' },
+      { id: 'Blitz', color: 'R', base: 5, step: 'Step 2', tags: ['tempo','early'], power: '+3 value if played 1st or 2nd in the trick.' },
+      { id: 'Rival', color: 'R', base: 4, step: 'Step 2', tags: ['synergy','color'], power: '+4 value if another Red card is in this trick.' },
+      { id: 'Hothead', color: 'R', base: 9, step: 'Step 3', tags: ['greedy','high'], power: 'Cannot win if a Blue card is in this trick.' },
+      { id: 'Showboat', color: 'R', base: 7, step: 'Post', tags: ['greedy','prize'], power: 'If this card wins a non-0 Prize, draw 1 extra Prize Card.' },
+      { id: 'Martyr', color: 'R', base: 1, step: 'Post', tags: ['chaos','punish'], power: 'If this card loses, the winner must discard 1 Prize Card.' },
+      // BLUE
+      { id: 'Mirror', color: 'B', base: 5, step: 'Step 1', tags: ['chaos','swap'], power: 'Swap Base Values with the card led.' },
+      { id: 'Nullifier', color: 'B', base: 6, step: 'Step 1', tags: ['chaos','cancel'], power: 'Cancel the powers of all cards played after this card.' },
+      { id: 'Frostbite', color: 'B', base: 5, step: 'Step 2', tags: ['chaos','debuff'], power: 'All other cards get -2 value (min 0).' },
+      { id: 'Tactician', color: 'B', base: 4, step: 'Step 2', tags: ['tempo','early'], power: '+2 value for each card remaining in your hand after playing this.' },
+      { id: 'Tide-Turner', color: 'B', base: 2, step: 'Step 2', tags: ['tempo','lowprize'], power: '+4 value if the current Prize Card is 0 or 1.' },
+      { id: 'Lone Wolf', color: 'B', base: 9, step: 'Step 3', tags: ['greedy','color'], power: 'Only wins if no other card in this trick shares its color.' },
+      { id: 'Anchor', color: 'B', base: 8, step: 'Step 3', tags: ['tempo','last'], power: 'Only wins if played last in this trick.' },
+      { id: 'Pacifist', color: 'B', base: 9, step: 'Step 3', tags: ['greedy','high'], power: 'Cannot win if any card with Base Value 3 or less is in this trick.' },
+      { id: 'Flipper', color: 'B', base: 6, step: 'Step 4', tags: ['chaos','invert'], power: 'Lowest eligible value wins this trick instead of highest.' },
+      // YELLOW
+      { id: 'Kingmaker', color: 'Y', base: 3, step: 'Step 1', tags: ['chaos','buff'], power: 'The card played immediately before this gets +4 value.' },
+      { id: 'Infinity', color: 'Y', base: INF, step: 'Step 2/3', tags: ['greedy','high'], power: 'Value is Infinity. Cannot win if any 0, 1, or 2 Base Value is played.' },
+      { id: 'High-Roller', color: 'Y', base: 4, step: 'Step 2', tags: ['greedy','prize'], power: '+4 value if the current Prize Card is 4 or 5.' },
+      { id: 'Gambler', color: 'Y', base: 0, step: 'Step 2', tags: ['tempo','last'], power: 'If played last in this trick, its value becomes 10.' },
+      { id: 'Underdog', color: 'Y', base: 2, step: 'Step 3', tags: ['synergy','low'], power: 'Only wins if this is the strictly lowest Base Value card.' },
+      { id: 'Tiebreaker', color: 'Y', base: 6, step: 'Step 4', tags: ['tempo','tie'], power: 'Wins any tie it is part of (instead of canceling out).' },
+      { id: 'Spoiler', color: 'Y', base: 2, step: 'Post', tags: ['tempo','lead'], power: 'If this card loses, its owner still leads the next trick.' },
+      { id: 'Midas', color: 'Y', base: 7, step: 'Post', tags: ['tempo','lowprize'], power: 'If this wins a 0, 1, or 2 Prize, discard it and draw a replacement.' },
+      { id: 'Pickpocket', color: 'Y', base: 4, step: 'Post', tags: ['chaos','punish'], power: 'If this loses on a 4 or 5 Prize, draw 1 Prize Card from the deck.' },
+      // GREEN
+      { id: 'Copycat', color: 'G', base: 0, step: 'Step 1', tags: ['synergy','copy'], power: 'Copies the card played immediately before it, with +1 Base Value.' },
+      { id: 'Scapegoat', color: 'G', base: 1, step: 'Step 1', tags: ['synergy','immune'], power: 'Cannot be removed or canceled by other card powers.' },
+      { id: 'Leech', color: 'G', base: 3, step: 'Step 2', tags: ['synergy','low'], power: 'Add the Base Value of the lowest other card played (∞ counts as 10).' },
+      { id: 'Crowd-Surfer', color: 'G', base: 4, step: 'Step 2', tags: ['synergy','color'], power: '+3 value for each other card sharing a color with this.' },
+      { id: 'Tax Collector', color: 'G', base: 4, step: 'Step 2', tags: ['synergy','low'], power: '+3 value for each card with Base Value 3 or less in this trick.' },
+      { id: 'Late Bloomer', color: 'G', base: 2, step: 'Step 2', tags: ['synergy','scale'], power: '+2 value for each round completed so far (+0 in R1, +8 in R5).' },
+      { id: 'Vampire', color: 'G', base: 6, step: 'Step 2', tags: ['synergy','remove'], power: '+3 value if a card was removed from this trick.' },
+      { id: 'Chameleon', color: 'G', base: 4, step: 'Step 2/3', tags: ['synergy','color','chaos'], power: 'Counts as all 4 colors (Red, Blue, Yellow, Green).' },
+      { id: 'Middleman', color: 'G', base: 7, step: 'Step 3', tags: ['tempo','mid'], power: 'Only wins if neither led nor played last.' },
+    ];
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function fmtVal(v) {
+      return v >= INF ? '∞' : String(v);
+    }
+
+    // Exact 4-Step Resolution Engine (matches RULES.md & sim.js)
+    function resolveTrick(plays, prizeVal, roundNum) {
+      const n = plays.length;
+      const entries = plays.map((p, idx) => ({
+        player: p.player,
+        card: p.card,
+        effId: p.card.id,
+        pos: idx,
+        baseVal: p.card.base,
+        effVal: p.card.base,
+        colors: [p.card.color],
+        removed: false,
+        powerCanceled: false,
+        immune: p.card.id === 'Scapegoat',
+        eligible: true,
+        handRemaining: p.handRemaining,
+        kingmakerBuff: 0,
+        notes: [],
+      }));
+
+      // Step 1: Copycat
+      for (let i = 0; i < n; i++) {
+        const e = entries[i];
+        if (e.effId === 'Copycat' && i > 0) {
+          const prev = entries[i - 1];
+          e.effId = prev.effId;
+          e.baseVal = prev.baseVal >= INF ? INF : prev.baseVal + 1;
+          e.effVal = e.baseVal;
+          if (e.effId === 'Scapegoat') e.immune = true;
+          e.notes.push(`Copied ${prev.effId}`);
+        }
+      }
+
+      // Saboteur & Nullifier
+      for (let i = 0; i < n; i++) {
+        const e = entries[i];
+        if (e.effId === 'Saboteur' && !e.powerCanceled) {
+          for (let j = 0; j < i; j++) {
+            if (!entries[j].immune) {
+              entries[j].powerCanceled = true;
+              entries[j].notes.push('Canceled by Saboteur');
+            }
+          }
+        } else if (e.effId === 'Nullifier' && !e.powerCanceled) {
+          for (let j = i + 1; j < n; j++) {
+            if (!entries[j].immune) {
+              entries[j].powerCanceled = true;
+              entries[j].notes.push('Canceled by Nullifier');
+            }
+          }
+        }
+      }
+
+      // Mirror
+      for (let i = 1; i < n; i++) {
+        const e = entries[i];
+        if (e.effId === 'Mirror' && !e.powerCanceled) {
+          const lead = entries[0];
+          const tmp = e.baseVal;
+          e.baseVal = lead.baseVal;
+          lead.baseVal = tmp;
+          e.notes.push(`Swapped base with ${lead.card.id}`);
+        }
+      }
+
+      // Kingmaker
+      for (let i = 1; i < n; i++) {
+        const e = entries[i];
+        if (e.effId === 'Kingmaker' && !e.powerCanceled) {
+          entries[i - 1].kingmakerBuff += 4;
+          entries[i - 1].notes.push('+4 Kingmaker');
+        }
+      }
+
+      // Bouncer
+      let anyRemoved = false;
+      for (let i = 0; i < n; i++) {
+        const e = entries[i];
+        if (e.effId === 'Bouncer' && !e.powerCanceled && !e.removed) {
+          let bestIdx = -1, bestVal = -1;
+          for (let j = 0; j < n; j++) {
+            if (j === i || entries[j].removed || entries[j].immune) continue;
+            if (entries[j].baseVal > bestVal) {
+              bestVal = entries[j].baseVal;
+              bestIdx = j;
+            }
+          }
+          if (bestIdx !== -1) {
+            entries[bestIdx].removed = true;
+            entries[bestIdx].notes.push('Removed by Bouncer');
+            anyRemoved = true;
+          }
+        }
+      }
+
+      const active = entries.filter((e) => !e.removed);
+
+      // Chameleon colors
+      for (const e of active) {
+        if (e.effId === 'Chameleon' && !e.powerCanceled) {
+          e.colors = ['R', 'B', 'Y', 'G'];
+        }
+      }
+
+      // Step 2: Modify
+      for (const e of active) e.effVal = e.baseVal;
+
+      for (const e of active) {
+        if (e.powerCanceled) continue;
+        if (e.effId === 'Infinity') e.effVal = INF;
+        else if (e.effId === 'Giant-Slayer' && active.some((o) => o.baseVal >= 8)) e.effVal = 11;
+        else if (e.effId === 'Gambler' && e.pos === n - 1) e.effVal = 10;
+      }
+
+      const frostbiteCount = active.filter((e) => e.effId === 'Frostbite' && !e.powerCanceled).length;
+      for (const e of active) {
+        if (e.effVal >= INF) continue;
+        e.effVal += e.kingmakerBuff;
+        const otherFrost = frostbiteCount - (e.effId === 'Frostbite' && !e.powerCanceled ? 1 : 0);
+        e.effVal -= 2 * otherFrost;
+
+        if (!e.powerCanceled) {
+          switch (e.effId) {
+            case 'Blitz': if (e.pos <= 1) e.effVal += 3; break;
+            case 'Rival': if (active.some((o) => o !== e && o.colors.includes('R'))) e.effVal += 4; break;
+            case 'Tactician': e.effVal += 2 * e.handRemaining; break;
+            case 'Tide-Turner': if (prizeVal <= 1) e.effVal += 4; break;
+            case 'High-Roller': if (prizeVal >= 4) e.effVal += 4; break;
+            case 'Leech': {
+              const others = active.filter((o) => o !== e);
+              if (others.length) e.effVal += Math.min(...others.map((o) => (o.baseVal >= INF ? 10 : o.baseVal)));
+              break;
+            }
+            case 'Crowd-Surfer': {
+              const m = active.filter((o) => o !== e && o.colors.some((c) => e.colors.includes(c))).length;
+              e.effVal += 3 * m;
+              break;
+            }
+            case 'Tax Collector':
+              e.effVal += 3 * active.filter((o) => o.baseVal <= 3).length;
+              break;
+            case 'Late Bloomer': e.effVal += 2 * (roundNum - 1); break;
+            case 'Vampire': if (anyRemoved) e.effVal += 3; break;
+          }
+        }
+        if (e.effVal < 0) e.effVal = 0;
+      }
+
+      // Step 3: Eligibility
+      for (const e of active) {
+        if (e.powerCanceled) continue;
+        switch (e.effId) {
+          case 'Sprinter': if (e.pos !== 0) { e.eligible = false; e.notes.push('Not led'); } break;
+          case 'Hothead': if (active.some((o) => o !== e && o.colors.includes('B'))) { e.eligible = false; e.notes.push('Blue present'); } break;
+          case 'Lone Wolf': if (active.some((o) => o !== e && o.colors.some((c) => e.colors.includes(c)))) { e.eligible = false; e.notes.push('Color matched'); } break;
+          case 'Anchor': if (e.pos !== n - 1) { e.eligible = false; e.notes.push('Not last'); } break;
+          case 'Pacifist': if (active.some((o) => o !== e && o.baseVal <= 3)) { e.eligible = false; e.notes.push('≤3 present'); } break;
+          case 'Underdog': if (!active.every((o) => o === e || o.baseVal > e.baseVal)) { e.eligible = false; e.notes.push('Not strictly lowest'); } break;
+          case 'Middleman': if (e.pos === 0 || e.pos === n - 1) { e.eligible = false; e.notes.push('Must be middle'); } break;
+          case 'Infinity': if (active.some((o) => o !== e && o.baseVal <= 2)) { e.eligible = false; e.notes.push('0/1/2 present'); } break;
+        }
+      }
+
+      // Step 4: Compare
+      const lowestWins = active.some((e) => e.effId === 'Flipper' && !e.powerCanceled);
+      const eligible = active.filter((e) => e.eligible);
+      let winnerEntry = null;
+      let deadlockReason = null;
+
+      if (eligible.length === 0) {
+        deadlockReason = 'No eligible cards!';
+      } else {
+        const target = lowestWins ? Math.min(...eligible.map((e) => e.effVal)) : Math.max(...eligible.map((e) => e.effVal));
+        const tied = eligible.filter((e) => e.effVal === target);
+        if (tied.length === 1) {
+          winnerEntry = tied[0];
+        } else {
+          const tb = tied.filter((e) => e.effId === 'Tiebreaker' && !e.powerCanceled);
+          if (tb.length === 1) winnerEntry = tb[0];
+          else deadlockReason = `Tied at ${fmtVal(target)} — all tied cards canceled!`;
+        }
+      }
+
+      let nextLeader = winnerEntry ? winnerEntry.player : plays[0].player;
+      if (winnerEntry) {
+        const spoilers = active.filter((e) => e.effId === 'Spoiler' && !e.powerCanceled && e !== winnerEntry);
+        if (spoilers.length) nextLeader = spoilers[spoilers.length - 1].player;
+      }
+
+      return { entries, active, winnerEntry, deadlockReason, lowestWins, nextLeader };
+    }
+
+    // --- BOT AI (matches sim.js profiles) ---
+    function scoreDraftCard(card, hand, profile) {
+      let s = (card.base >= INF ? 10.5 : card.base) + Math.random() * 0.4;
+      if (profile === 'Shark' && (card.tags.includes('greedy') || card.tags.includes('high'))) s += 4;
+      if (profile === 'Tactician' && (card.tags.includes('tempo') || card.tags.includes('lead') || card.tags.includes('last'))) s += 4;
+      if (profile === 'Chaos' && (card.tags.includes('chaos') || card.tags.includes('punish') || card.tags.includes('remove'))) s += 4.5;
+      return s;
+    }
+
+    function chooseBotCard(hand, profile, pos, nPlayers, curPrize, nextPrize, plays) {
+      if (hand.length === 1) return 0;
+      const isLead = pos === 0, isLast = pos === nPlayers - 1;
+      let bestIdx = 0, bestScore = -1e9;
+      for (let i = 0; i < hand.length; i++) {
+        const c = hand[i];
+        const val = c.base >= INF ? 12 : c.base;
+        let s = Math.random() * 0.5;
+        if (c.id === 'Sprinter') s += isLead ? 6 : -20;
+        if (c.id === 'Anchor') s += isLast ? 6 : -20;
+        if (c.id === 'Middleman') s += (!isLead && !isLast) ? 5 : -20;
+        if (c.id === 'Gambler') s += isLast ? 7 : -12;
+        if (c.id === 'Copycat') s += isLead ? -15 : (plays[pos - 1].card.base >= 7 ? 8 : 0);
+
+        const highP = curPrize >= 4, lowP = curPrize <= 1;
+        if (profile === 'Shark') {
+          s += highP ? val * 1.5 : lowP ? -val * 1.2 : val * 0.4;
+        } else if (profile === 'Tactician') {
+          const wantLead = lowP && nextPrize >= 4 && hand.some((h) => h.id === 'Sprinter' || h.id === 'Blitz');
+          s += (highP || wantLead) ? val * 1.2 : -val * 0.8;
+        } else {
+          const maxP = plays.length ? Math.max(...plays.map((p) => p.card.base)) : 0;
+          if (c.id === 'Bouncer' && maxP >= 8) s += 12;
+          if (c.id === 'Flipper' && maxP >= 7) s += 10;
+          if (c.id === 'Pickpocket' && highP) s += 8;
+          s += highP ? val * 0.9 : -val * 0.5;
+        }
+        if (s > bestScore) { bestScore = s; bestIdx = i; }
+      }
+      return bestIdx;
+    }
+
+    // --- GAME STATE ---
+    let G = null;
+    const PLAYERS = [
+      { id: 0, name: 'You', profile: 'Human' },
+      { id: 1, name: 'Bot Ada', profile: 'Shark' },
+      { id: 2, name: 'Bot Kai', profile: 'Tactician' },
+      { id: 3, name: 'Bot Vex', profile: 'Chaos' },
+    ];
+
+    function addLog(msg, cls = '') {
+      const log = document.getElementById('log');
+      const div = document.createElement('div');
+      div.className = `log-entry ${cls}`;
+      div.innerHTML = msg;
+      log.prepend(div);
+    }
+
+    function startNewGame() {
+      document.getElementById('log').innerHTML = '';
+      const charDeck = shuffle(ROSTER);
+      const hands = [[], [], [], []];
+      for (let p = 0; p < 4; p++) hands[p].push(charDeck.pop());
+
+      G = {
+        charDeck,
+        hands,
+        roundHands: [],
+        wonPrizes: [[], [], [], []],
+        round: 1,
+        trick: 0,
+        prizeDeck: [],
+        roundPrizes: [],
+        trickLeader: Math.floor(Math.random() * 4),
+        plays: [],
+        turnOffset: 0,
+        phase: 'play', // 'play' | 'trick_done' | 'draft' | 'gameover'
+        lastResult: null,
+        draftPool: [],
+        draftOrder: [],
+        draftCursor: 0,
+      };
+      addLog(`New game started! ${PLAYERS[G.trickLeader].name} leads Round 1.`, 'round');
+      startRound();
+    }
+
+    function startRound() {
+      const deck = [];
+      for (let v = 0; v <= 5; v++) for (let k = 0; k < 3; k++) deck.push(v);
+      G.prizeDeck = shuffle(deck);
+      G.roundPrizes = G.prizeDeck.splice(0, G.round);
+      G.roundHands = G.hands.map((h) => [...h]);
+      G.wonPrizes = [[], [], [], []];
+      G.trick = 0;
+      startTrick();
+    }
+
+    function startTrick() {
+      G.plays = [];
+      G.turnOffset = 0;
+      G.phase = 'play';
+      G.lastResult = null;
+      render();
+      advanceTurn();
+    }
+
+    function advanceTurn() {
+      if (G.phase !== 'play') return;
+      if (G.turnOffset >= 4) {
+        finishTrick();
+        return;
+      }
+      const p = (G.trickLeader + G.turnOffset) % 4;
+      if (p === 0) {
+        render();
+        return; // Wait for human click
+      }
+      setTimeout(() => {
+        if (G.phase !== 'play') return;
+        const hand = G.roundHands[p];
+        const curP = G.roundPrizes[G.trick];
+        const nextP = G.trick + 1 < G.roundPrizes.length ? G.roundPrizes[G.trick + 1] : 0;
+        const idx = chooseBotCard(hand, PLAYERS[p].profile, G.turnOffset, 4, curP, nextP, G.plays);
+        const card = hand.splice(idx, 1)[0];
+        G.plays.push({ player: p, card, handRemaining: hand.length });
+        G.turnOffset++;
+        render();
+        advanceTurn();
+      }, 360);
+    }
+
+    function playHumanCard(cardIndex) {
+      if (G.phase !== 'play') return;
+      const activePlayer = (G.trickLeader + G.turnOffset) % 4;
+      if (activePlayer !== 0) return;
+      const card = G.roundHands[0].splice(cardIndex, 1)[0];
+      G.plays.push({ player: 0, card, handRemaining: G.roundHands[0].length });
+      G.turnOffset++;
+      render();
+      advanceTurn();
+    }
+
+    function finishTrick() {
+      const prizeVal = G.roundPrizes[G.trick];
+      const res = resolveTrick(G.plays, prizeVal, G.round);
+      G.lastResult = res;
+      G.phase = 'trick_done';
+
+      if (!res.winnerEntry) {
+        addLog(`R${G.round} T${G.trick + 1} (Prize ${prizeVal}): <b>Deadlock!</b> ${res.deadlockReason}`, 'deadlock');
+      } else {
+        const w = res.winnerEntry.player;
+        let awarded = prizeVal;
+        if (res.winnerEntry.effId === 'Midas' && awarded <= 2 && G.prizeDeck.length) {
+          awarded = G.prizeDeck.pop();
+          addLog(`Midas replaced ${prizeVal} with <b>${awarded}</b>!`);
+        }
+        G.wonPrizes[w].push(awarded);
+
+        if (res.winnerEntry.effId === 'Showboat' && prizeVal !== 0 && G.prizeDeck.length) {
+          const extra = G.prizeDeck.pop();
+          G.wonPrizes[w].push(extra);
+          addLog(`Showboat drew extra Prize <b>${extra}</b>!`);
+        }
+
+        for (const e of res.active) {
+          if (e.player === w || e.powerCanceled) continue;
+          if (e.effId === 'Martyr' && G.wonPrizes[w].length) {
+            const minIdx = G.wonPrizes[w].indexOf(Math.min(...G.wonPrizes[w]));
+            const lost = G.wonPrizes[w].splice(minIdx, 1)[0];
+            addLog(`Martyr forced ${PLAYERS[w].name} to discard Prize ${lost}.`);
+          } else if (e.effId === 'Pickpocket' && prizeVal >= 4 && G.prizeDeck.length) {
+            const stolen = G.prizeDeck.pop();
+            G.wonPrizes[e.player].push(stolen);
+            addLog(`Pickpocket drew Prize <b>${stolen}</b> for ${PLAYERS[e.player].name}!`);
+          }
+        }
+
+        addLog(
+          `R${G.round} T${G.trick + 1} (Prize ${prizeVal}): <b>${PLAYERS[w].name}</b> wins with ${res.winnerEntry.card.id} (${fmtVal(res.winnerEntry.effVal)})!`,
+          'win'
+        );
+      }
+
+      G.trickLeader = res.nextLeader;
+      render();
+    }
+
+    function nextStepAfterTrick() {
+      if (G.trick + 1 < G.round) {
+        G.trick++;
+        startTrick();
+      } else {
+        endRound();
+      }
+    }
+
+    function endRound() {
+      const scores = G.wonPrizes.map((arr, p) => ({
+        player: p,
+        total: arr.reduce((a, b) => a + b, 0),
+        maxPrize: arr.length ? Math.max(...arr) : -1,
+        count: arr.length,
+      }));
+      scores.sort((a, b) => b.total - a.total || b.maxPrize - a.maxPrize || b.count - a.count);
+      const rw = scores[0].player;
+
+      addLog(
+        `<b>End of Round ${G.round}:</b> ${scores.map((s) => `${PLAYERS[s.player].name}: ${s.total}`).join(' | ')} → <b>${PLAYERS[rw].name}</b> wins the round!`,
+        'round'
+      );
+
+      if (G.round === 5) {
+        G.phase = 'gameover';
+        G.gameWinner = rw;
+        render();
+        return;
+      }
+
+      // Setup N+1 draft
+      G.draftPool = [];
+      for (let i = 0; i < 5; i++) G.draftPool.push(G.charDeck.pop());
+
+      const mode = document.getElementById('draftMode').value;
+      G.draftOrder = mode === 'winner_first'
+        ? scores.map((s) => s.player)
+        : [scores[0].player, scores[3].player, scores[2].player, scores[1].player];
+      G.draftCursor = 0;
+      G.trickLeader = rw;
+      G.phase = 'draft';
+      render();
+      advanceDraft();
+    }
+
+    function advanceDraft() {
+      if (G.phase !== 'draft') return;
+      if (G.draftCursor >= 4) {
+        G.round++;
+        startRound();
+        return;
+      }
+      const p = G.draftOrder[G.draftCursor];
+      if (p === 0) {
+        render();
+        return;
+      }
+      setTimeout(() => {
+        if (G.phase !== 'draft') return;
+        let bestIdx = 0, bestS = -1e9;
+        for (let i = 0; i < G.draftPool.length; i++) {
+          const sc = scoreDraftCard(G.draftPool[i], G.hands[p], PLAYERS[p].profile);
+          if (sc > bestS) { bestS = sc; bestIdx = i; }
+        }
+        const picked = G.draftPool.splice(bestIdx, 1)[0];
+        G.hands[p].push(picked);
+        addLog(`${PLAYERS[p].name} drafted <b>${picked.id}</b>.`);
+        G.draftCursor++;
+        render();
+        advanceDraft();
+      }, 350);
+    }
+
+    function pickDraftCard(idx) {
+      if (G.phase !== 'draft' || G.draftOrder[G.draftCursor] !== 0) return;
+      const picked = G.draftPool.splice(idx, 1)[0];
+      G.hands[0].push(picked);
+      addLog(`You drafted <b>${picked.id}</b>.`);
+      G.draftCursor++;
+      render();
+      advanceDraft();
+    }
+
+    function cardHTML(card, opts = {}) {
+      const { clickable = false, onClick = '', entry = null, isWinner = false } = opts;
+      const cls = ['card', card.color];
+      if (clickable) cls.push('clickable');
+      if (isWinner) cls.push('winner-card');
+      if (entry && entry.removed) cls.push('removed-card');
+
+      let badge = '';
+      if (isWinner) badge = `<span class="card-badge badge-win">WINNER • ${fmtVal(entry.effVal)}</span>`;
+      else if (entry && entry.removed) badge = `<span class="card-badge badge-dead">REMOVED</span>`;
+      else if (entry && !entry.eligible) badge = `<span class="card-badge badge-dead">INELIGIBLE (${entry.notes.join(', ')})</span>`;
+      else if (entry) badge = `<span class="card-badge badge-eff">Eff: ${fmtVal(entry.effVal)}${entry.powerCanceled ? ' (Canceled)' : ''}</span>`;
+
+      return `
+        <div class="${cls.join(' ')}" ${onClick ? `onclick="${onClick}"` : ''}>
+          <div class="card-top">
+            <span class="card-val">${fmtVal(card.base)}</span>
+            <span class="card-step">${card.step}</span>
+          </div>
+          <div class="card-name">${card.id}</div>
+          <div class="card-power">${card.power}</div>
+          ${badge}
+        </div>
+      `;
+    }
+
+    function render() {
+      const activeP = G.phase === 'play' ? (G.trickLeader + G.turnOffset) % 4 : -1;
+
+      // Opponents
+      const oppEl = document.getElementById('opponents');
+      oppEl.innerHTML = [1, 2, 3].map((p) => {
+        const score = G.wonPrizes[p].reduce((a, b) => a + b, 0);
+        const remSet = new Set(G.roundHands[p].map((c) => c.id));
+        const chips = G.hands[p].map((c) =>
+          `<span class="chip ${c.color}-chip ${remSet.has(c.id) ? '' : 'played'}" title="${c.power}">${c.id} (${fmtVal(c.base)})</span>`
+        ).join('');
+        return `
+          <div class="player-box ${activeP === p ? 'active-turn' : ''} ${G.trickLeader === p ? 'leader-box' : ''}">
+            <div class="p-head">
+              <span class="p-name">${PLAYERS[p].name}</span>
+              <span class="p-tag">${PLAYERS[p].profile}</span>
+            </div>
+            <div class="p-stats">
+              <span>Round Pts: <b>${score}</b></span>
+              <span>Prizes: <b>${G.wonPrizes[p].join(', ') || '—'}</b></span>
+            </div>
+            <div class="known-chips">${chips}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Prize Row
+      document.getElementById('roundLabel').textContent = `Round ${G.round} / 5 • Trick ${Math.min(G.trick + 1, G.round)} / ${G.round}`;
+      document.getElementById('prizeList').innerHTML = G.roundPrizes.map((v, idx) => {
+        const cls = idx === G.trick && G.phase !== 'draft' && G.phase !== 'gameover' ? 'current' : idx < G.trick ? 'done' : '';
+        return `<div class="prize-card ${cls}">${v}<small>T${idx + 1}</small></div>`;
+      }).join('');
+
+      // Draft Panel
+      const draftEl = document.getElementById('draftContainer');
+      if (G.phase === 'draft') {
+        const curDrafter = G.draftOrder[G.draftCursor];
+        const yourTurn = curDrafter === 0;
+        draftEl.innerHTML = `
+          <div class="draft-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <strong>Round ${G.round} Draft Pool (Pick 1 to keep for Round ${G.round + 1})</strong>
+              <span style="color:var(--gold);font-weight:700;">${yourTurn ? 'YOUR PICK!' : `${PLAYERS[curDrafter].name} is picking...`}</span>
+            </div>
+            <div class="hand-grid">
+              ${G.draftPool.map((c, idx) => cardHTML(c, { clickable: yourTurn, onClick: yourTurn ? `pickDraftCard(${idx})` : '' })).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        draftEl.innerHTML = '';
+      }
+
+      // Trick Slots
+      const slotsEl = document.getElementById('trickSlots');
+      slotsEl.innerHTML = [0, 1, 2, 3].map((slotIdx) => {
+        const play = G.plays[slotIdx];
+        const entry = G.lastResult ? G.lastResult.entries[slotIdx] : null;
+        const isWin = G.lastResult && G.lastResult.winnerEntry === entry && entry !== null;
+        const expectedP = (G.trickLeader + slotIdx) % 4;
+        return `
+          <div class="slot">
+            <div class="slot-label">
+              <span>${slotIdx === 0 ? '1st (Lead)' : slotIdx === 3 ? '4th (Last)' : `${slotIdx + 1}${slotIdx === 1 ? 'nd' : 'rd'}`}</span>
+              <b>${play ? PLAYERS[play.player].name : PLAYERS[expectedP].name}</b>
+            </div>
+            ${play ? cardHTML(play.card, { entry, isWinner: isWin }) : '<div style="margin:auto;color:#475569;font-size:0.8rem;">Waiting...</div>'}
+          </div>
+        `;
+      }).join('');
+
+      // Status & Next Button
+      const statusEl = document.getElementById('statusText');
+      const btnNext = document.getElementById('btnNext');
+      if (G.phase === 'gameover') {
+        statusEl.innerHTML = `<span style="color:var(--gold);font-size:1.05rem;">Game Over! ${PLAYERS[G.gameWinner].name} wins Round 5 & the Game!</span>`;
+        btnNext.style.display = 'none';
+      } else if (G.phase === 'trick_done') {
+        const res = G.lastResult;
+        statusEl.innerHTML = res.winnerEntry
+          ? `<b>${PLAYERS[res.winnerEntry.player].name}</b> wins the trick${res.lowestWins ? ' (Flipper: Lowest Wins!)' : ''}! Next lead: <b>${PLAYERS[res.nextLeader].name}</b>.`
+          : `<b>Deadlock:</b> ${res.deadlockReason} Next lead: <b>${PLAYERS[res.nextLeader].name}</b>.`;
+        btnNext.textContent = G.trick + 1 < G.round ? 'Next Trick' : (G.round < 5 ? 'End Round & Draft' : 'Finish Game');
+        btnNext.style.display = 'inline-block';
+      } else if (G.phase === 'play') {
+        statusEl.textContent = activeP === 0
+          ? `Your turn to play! (Playing ${G.turnOffset === 0 ? '1st / Lead' : G.turnOffset === 3 ? '4th / Last' : `#${G.turnOffset + 1}`})`
+          : `${PLAYERS[activeP].name} is thinking...`;
+        btnNext.style.display = 'none';
+      } else {
+        statusEl.textContent = 'Drafting for next round...';
+        btnNext.style.display = 'none';
+      }
+
+      // Your Hand
+      const myScore = G.wonPrizes[0].reduce((a, b) => a + b, 0);
+      document.getElementById('yourScore').textContent = `Round Pts: ${myScore} (Prizes: ${G.wonPrizes[0].join(', ') || '—'})`;
+      const myTurn = G.phase === 'play' && activeP === 0;
+      document.getElementById('yourHint').textContent = myTurn ? 'Click a card to play it' : '';
+      document.getElementById('yourHand').innerHTML = G.roundHands[0]
+        .map((c, idx) => cardHTML(c, { clickable: myTurn, onClick: myTurn ? `playHumanCard(${idx})` : '' }))
+        .join('');
+    }
+
+    document.getElementById('btnNewGame').addEventListener('click', startNewGame);
+    document.getElementById('btnNext').addEventListener('click', nextStepAfterTrick);
+    startNewGame();
+  </script>
+</body>
+</html>
